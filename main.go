@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,12 +14,15 @@ import (
 func handleSingleFile(filePath string) bool {
 	jsonData := egret.LoadJsonData(filePath)
 	if jsonData == nil {
+		log.Printf("load egret json data failed: %s\n", filePath)
 		return false
 	}
 
 	outputFilePath := strings.Replace(filePath, ".json", ".plist", -1)
+	outputFilePath = strings.Replace(outputFilePath, ".fnt", ".plist", -1)
 
 	if !ccc.SaveXmlData(outputFilePath, jsonData) {
+		log.Printf("save ccc xml data failed: %s\n", outputFilePath)
 		return false
 	}
 
@@ -42,11 +45,11 @@ func getCurrentDirFiles(path string) ([]string, error) {
 			continue
 		}
 
-		if filepath.Ext(abs) != ".json" {
+		if filepath.Ext(abs) != ".json" && filepath.Ext(abs) != ".fnt" {
 			continue
 		}
 
-		currentFiles = append(currentFiles, abs)
+		currentFiles = append(currentFiles, filepath.Join(path, info.Name()))
 	}
 
 	return currentFiles, nil
@@ -54,11 +57,19 @@ func getCurrentDirFiles(path string) ([]string, error) {
 
 func handleFolder(dir string) bool {
 	files, _ := getCurrentDirFiles(dir)
-	fmt.Println("files: ", files)
+	//fmt.Println("files: ", files)
 
+	log.Println("start to handle folder: ", dir)
+	log.Println("total files: ", len(files))
+
+	var count int
 	for _, file := range files {
-		handleSingleFile(file)
+		if handleSingleFile(file) {
+			count++
+		}
 	}
+
+	log.Println("total success files: ", count)
 
 	return true
 }
